@@ -25,6 +25,9 @@ namespace C4
             var p2uSpinalTap = model.AddSoftwareSystem(Location.Internal, "P2U Spinal Tap", "Receives, produces and routes messages bound to/from the NHS spine");
             var p2uSubsystems = model.AddSoftwareSystem(Location.Internal, "P2U internal subsystem", "Performs P2U business processes (dispensery, order tracking, shipping, etc.)");
 
+            nhsSpine.AddTags("external");
+            gemPlus.AddTags("external");
+
             p2uSpinalTap.Uses(nhsSpine, "Makes requests to", "REST over HTTPS", InteractionStyle.Asynchronous);
             p2uSpinalTap.Uses(p2uSubsystems, "Gets updates from", "AMQP", InteractionStyle.Asynchronous);
             p2uSpinalTap.Uses(gemPlus, "Authenticates with");
@@ -48,8 +51,8 @@ namespace C4
             #region Components
             var restClient = p2uSpinalTapServer.AddComponent("REST client", "Makes REST requests");
             var messageParser = p2uSpinalTapServer.AddComponent("Message parser", "Converts P2U messages to/from HL7 messages");
-            var dataSink = p2uSpinalTapServer.AddComponent("Data Sink", "Receives and routes messages");
-            var dataPump = p2uSpinalTapServer.AddComponent("Data Pump", "Emits messages");
+            var dataSink = p2uSpinalTapServer.AddComponent("Data Sink", "Receives and routes messages from the NHS onto the service bus");
+            var dataPump = p2uSpinalTapServer.AddComponent("Data Pump", "Emits messages onto the NHS spine from the service bus");
             var securityGateway = p2uSpinalTapServer.AddComponent("GEM+ Bridge", "Provides access to the GEM+ authentication service");
 
             var stateDb = p2uSpinalTapDbServer.AddComponent("Spinal Tap State Database", "Holds state information about spinal tap interactions");
@@ -94,6 +97,7 @@ namespace C4
             styles.Add(new ElementStyle(Tags.ContainerInstance) { Shape = Shape.Hexagon });
             styles.Add(new ElementStyle(Tags.Component) { Shape = Shape.RoundedBox });
             styles.Add(new ElementStyle("service-bus") { Shape = Shape.Pipe });
+            styles.Add(new ElementStyle("external") { Shape = Shape.Hexagon });
 
             UploadWorkspace(workspace);
         }

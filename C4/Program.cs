@@ -53,8 +53,6 @@ namespace C4
             var securityGateway = p2uSpinalTapServer.AddComponent("GEM+ Bridge", "Provides access to the GEM+ authentication service");
 
             var stateDb = p2uSpinalTapDbServer.AddComponent("Spinal Tap State Database", "Holds state information about spinal tap interactions");
-            var amqpService = p2uAmqpHost.AddComponent("AMQP Service", "Relays messages using the AMQP protocol");
-            amqpService.AddTags("service-bus");
 
             restClient.Uses(nhsSpine, "Makes requests to");
             restClient.Uses(messageParser, "Relays response to");
@@ -64,11 +62,11 @@ namespace C4
             messageParser.Uses(restClient, "sends formatted messages to");
 
             dataSink.Uses(stateDb, "Updates");
-            dataSink.Uses(amqpService, "Routes messages to");
+            dataSink.Uses(p2uAmqpHost, "Routes messages to");
 
             dataPump.Uses(stateDb, "Updates");
             dataPump.Uses(messageParser, "Sends formatted messages to");
-            amqpService.Uses(dataPump, "Sends messages to");
+            p2uAmqpHost.Uses(dataPump, "Sends messages to");
 
             securityGateway.Uses(gemPlus, "Authenticates with");
             #endregion
@@ -88,8 +86,6 @@ namespace C4
             AddComponents(p2uAmqpHost.Components, componentView);
             componentView.Add(gemPlus);
             componentView.Add(nhsSpine);
-            componentView.Add(p2uAmqpHost);
-            componentView.Add(amqpService);
             componentView.PaperSize = PaperSize.A4_Landscape;
 
             var styles = workspace.Views.Configuration.Styles;

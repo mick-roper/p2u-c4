@@ -37,8 +37,12 @@ namespace C4
             var p2uSpinalTapDbServer = p2uSpinalTap.AddContainer("Spinal Tap Database Server", "Server", "MS SQL 2017");
             var p2uAmqpHost = p2uSpinalTap.AddContainer("AMQP host", "Server", "Windows Server 2016|Ubuntu 16|Debian");
 
+            p2uSpinalTapServer.Model.AddDeploymentNode("Server 1", "A stateless server", "Windows Server", 3);
+
             p2uSpinalTapServer.Uses(p2uSpinalTapDbServer, "Gets/sets state from", "T-SQL");
             p2uSpinalTapServer.Uses(p2uAmqpHost, "Pushes/Pull messages from", "AMQP");
+
+            p2uAmqpHost.AddTags("service-bus");
             #endregion
 
             #region Components
@@ -49,6 +53,7 @@ namespace C4
             var securityGateway = p2uSpinalTapServer.AddComponent("GEM+ Bridge", "Provides access to the GEM+ authentication service");
 
             var stateDb = p2uSpinalTapDbServer.AddComponent("Spinal Tap State Database", "Holds state information about spinal tap interactions");
+            var amqpService = p2uAmqpHost.AddComponent("AMQP Service", "Relays messages using the AMQP protocol");
 
             restClient.Uses(nhsSpine, "Makes requests to");
             restClient.Uses(messageParser, "Relays response to");
@@ -58,11 +63,11 @@ namespace C4
             messageParser.Uses(restClient, "sends formatted messages to");
 
             dataSink.Uses(stateDb, "Updates");
-            dataSink.Uses(p2uAmqpHost, "Routes messages to");
+            dataSink.Uses(amqpService, "Routes messages to");
 
             dataPump.Uses(stateDb, "Updates");
             dataPump.Uses(messageParser, "Sends formatted messages to");
-            dataPump.Uses(p2uAmqpHost, "Gets messages from");
+            amqpService.Uses(dataPump, "Sends messages to");
 
             securityGateway.Uses(gemPlus, "Authenticates with");
             #endregion
@@ -84,6 +89,13 @@ namespace C4
             componentView.Add(gemPlus);
             componentView.Add(nhsSpine);
             componentView.PaperSize = PaperSize.A4_Landscape;
+
+            var styles = workspace.Views.Configuration.Styles;
+            styles.Add(new ElementStyle(Tags.SoftwareSystem) { Shape = Shape.Box });
+            styles.Add(new ElementStyle(Tags.Container) { Shape = Shape.Folder });
+            styles.Add(new ElementStyle(Tags.ContainerInstance) { Shape = Shape.Hexagon });
+            styles.Add(new ElementStyle(Tags.Component) { Shape = Shape.RoundedBox });
+            styles.Add(new ElementStyle("service-bus") { Shape = Shape.Pipe });
 
             UploadWorkspace(workspace);
         }

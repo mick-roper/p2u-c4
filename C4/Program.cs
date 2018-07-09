@@ -22,10 +22,8 @@ namespace C4
             var gemPlus = model.AddSoftwareSystem(Location.External, "GEM+", "Smart card authentication software");
             var p2uSpinalTap = model.AddSoftwareSystem(Location.Internal, "P2U Spinal Tap", "Receives, produces and routes messages bound to/from the NHS spine");
             var p2uSubsystems = model.AddSoftwareSystem(Location.Internal, "P2U internal subsystem", "Performs P2U business processes (dispensery, order tracking, shipping, etc.)");
-            var p2uDataWarehouse = model.AddSoftwareSystem(Location.Internal, "P2U Data Warehouse", "Long term data storage");
 
             p2uSpinalTap.Uses(nhsSpine, "Makes requests to", "REST over HTTPS", InteractionStyle.Asynchronous);
-            p2uSpinalTap.Uses(p2uDataWarehouse, "Sends updates to", "AMQP", InteractionStyle.Asynchronous);
             p2uSpinalTap.Uses(p2uSubsystems, "Gets updates from", "AMQP", InteractionStyle.Asynchronous);
             p2uSpinalTap.Uses(gemPlus, "Authenticates with");
 

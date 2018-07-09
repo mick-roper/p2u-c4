@@ -53,7 +53,6 @@ namespace C4
 
             dataSink.Uses(stateDb, "Updates");
             dataSink.Uses(p2uAmqpHost, "Routes messages to");
-
             #endregion
 
             var systemView = workspace.Views.CreateSystemContextView(p2uSpinalTap, "System Context", "1,000 ft view");
@@ -61,7 +60,8 @@ namespace C4
             systemView.Add(p2uSubsystems);
             systemView.Add(gemPlus);
 
-            var containerView = workspace.Views.
+            var containerView = workspace.Views.CreateContainerView(p2uSpinalTap, "Containers", "Physical layout of the solution");
+            containerView.AddAllContainers();
 
             UploadWorkspace(workspace);
         }

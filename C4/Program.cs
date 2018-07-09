@@ -54,6 +54,7 @@ namespace C4
 
             var stateDb = p2uSpinalTapDbServer.AddComponent("Spinal Tap State Database", "Holds state information about spinal tap interactions");
             var amqpService = p2uAmqpHost.AddComponent("AMQP Service", "Relays messages using the AMQP protocol");
+            amqpService.AddTags("service-bus");
 
             restClient.Uses(nhsSpine, "Makes requests to");
             restClient.Uses(messageParser, "Relays response to");
@@ -82,12 +83,13 @@ namespace C4
             containerView.AddAllContainers();
 
             var componentView = workspace.Views.CreateComponentView(p2uSpinalTapServer, "Spinal Tap Server Components", "The core components used to interract with NHS spine");
-            componentView.Add(p2uAmqpHost);
             AddComponents(p2uSpinalTapServer.Components, componentView);
             AddComponents(p2uSpinalTapDbServer.Components, componentView);
             AddComponents(p2uAmqpHost.Components, componentView);
             componentView.Add(gemPlus);
             componentView.Add(nhsSpine);
+            componentView.Add(p2uAmqpHost);
+            componentView.Add(amqpService);
             componentView.PaperSize = PaperSize.A4_Landscape;
 
             var styles = workspace.Views.Configuration.Styles;

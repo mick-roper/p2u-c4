@@ -23,7 +23,7 @@ namespace C4
             var nhsSpine = model.AddSoftwareSystem(Location.External, "NHS Spine", "SOR for all patient information");
             var gemPlus = model.AddSoftwareSystem(Location.External, "GEM+", "Smart card authentication software");
             var p2uSpinalTap = model.AddSoftwareSystem(Location.Internal, "P2U Spinal Tap", "Receives, produces and routes messages bound to/from the NHS spine");
-            var p2uSubsystems = model.AddSoftwareSystem(Location.Internal, "P2U internal subsystem", "Performs P2U business processes (dispensery, order tracking, shipping, etc.)");
+            var p2uSubsystems = model.AddSoftwareSystem(Location.Internal, "P2U subsystem", "Performs P2U business processes (dispensery, order tracking, shipping, etc.)");
 
             var customer = model.AddPerson("Customer", "A person using the service");
 

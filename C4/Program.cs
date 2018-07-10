@@ -25,6 +25,10 @@ namespace C4
             var p2uSpinalTap = model.AddSoftwareSystem(Location.Internal, "P2U Spinal Tap", "Receives, produces and routes messages bound to/from the NHS spine");
             var p2uSubsystems = model.AddSoftwareSystem(Location.Internal, "P2U internal subsystem", "Performs P2U business processes (dispensery, order tracking, shipping, etc.)");
 
+            var customer = model.AddPerson("Customer", "A person using the service");
+
+            customer.Uses(p2uSubsystems, "Utilises");
+
             nhsSpine.AddTags("external");
             gemPlus.AddTags("external");
 
@@ -38,9 +42,13 @@ namespace C4
             #region containers
             var p2uSpinalTapServer = p2uSpinalTap.AddContainer("Spinal Tap Server", "Server", "Windows Server 2016");
             var p2uSpinalTapDbServer = p2uSpinalTap.AddContainer("Spinal Tap Database Server", "Server", "MS SQL 2017");
+            var p2uSpinalTapRevProxy = p2uSpinalTap.AddContainer("Reverse Proxy Server", "Server", "Windows Server|Linux");
             var p2uAmqpHost = p2uSpinalTap.AddContainer("AMQP host", "Server", "Windows Server 2016|Ubuntu 16|Debian");
 
-            p2uSpinalTapServer.Model.AddDeploymentNode("Server 1", "A stateless server", "Windows Server", 3);
+            p2uSpinalTapRevProxy.Model.AddDeploymentNode("Rev Proxy Server", "Reverse proxy server", "Linux", 3);
+            p2uSpinalTapServer.Model.AddDeploymentNode("Spinal Tap Server", "A stateless server", "Windows Server", 3);
+
+            p2uSpinalTapRevProxy.Uses(p2uSpinalTapServer, "Sends requests to", "HTTP");
 
             p2uSpinalTapServer.Uses(p2uSpinalTapDbServer, "Gets/sets state from", "T-SQL");
             p2uSpinalTapServer.Uses(p2uAmqpHost, "Pushes/Pull messages from", "AMQP");
@@ -49,32 +57,20 @@ namespace C4
             #endregion
 
             #region Components
-            var restClient = p2uSpinalTapServer.AddComponent("REST client", "Makes REST requests");
-            var messageParser = p2uSpinalTapServer.AddComponent("Message parser", "Converts P2U messages to/from HL7 messages");
-            var dataSink = p2uSpinalTapServer.AddComponent("Data Sink", "Receives and routes messages from the NHS onto the service bus");
-            var dataPump = p2uSpinalTapServer.AddComponent("Data Pump", "Emits messages onto the NHS spine from the service bus");
-            var securityGateway = p2uSpinalTapServer.AddComponent("GEM+ Bridge", "Provides access to the GEM+ authentication service");
-
+            var revProxyService = p2uSpinalTapRevProxy.AddComponent("Nginx Service", "Reverse proxy");
+            var p2uSpinalTapService = p2uSpinalTapServer.AddComponent("Spinal Tap Service", "Handles interractions with NHS spine");
             var stateDb = p2uSpinalTapDbServer.AddComponent("Spinal Tap State Database", "Holds state information about spinal tap interactions");
 
-            restClient.Uses(nhsSpine, "Makes requests to");
-            restClient.Uses(messageParser, "Relays response to");
-            restClient.Uses(securityGateway, "Authenticates with");
+            revProxyService.Uses(p2uSpinalTapService, "Routes requests to");
 
-            messageParser.Uses(dataSink, "processes then (optionally) routes the message");
-            messageParser.Uses(restClient, "sends formatted messages to");
-
-            dataSink.Uses(stateDb, "Updates");
-            dataSink.Uses(p2uAmqpHost, "Routes messages to");
-
-            dataPump.Uses(stateDb, "Updates");
-            dataPump.Uses(messageParser, "Sends formatted messages to");
-            p2uAmqpHost.Uses(dataPump, "Sends messages to");
-
-            securityGateway.Uses(gemPlus, "Authenticates with");
+            p2uSpinalTapService.Uses(nhsSpine, "Makes requests to");
+            p2uSpinalTapService.Uses(stateDb, "Stores state in");
+            p2uSpinalTapService.Uses(p2uAmqpHost, "Pushes/pulls messages to/from");
+            p2uSpinalTapService.Uses(gemPlus, "Authenticates with");
             #endregion
 
             var systemView = workspace.Views.CreateSystemContextView(p2uSpinalTap, "System Context", "1,000 ft view");
+            systemView.Add(customer);
             systemView.Add(nhsSpine);
             systemView.Add(p2uSubsystems);
             systemView.Add(gemPlus);
@@ -84,14 +80,15 @@ namespace C4
             containerView.AddAllContainers();
 
             var componentView = workspace.Views.CreateComponentView(p2uSpinalTapServer, "Spinal Tap Server Components", "The core components used to interract with NHS spine");
-            AddComponents(p2uSpinalTapServer.Components, componentView);
-            AddComponents(p2uSpinalTapDbServer.Components, componentView);
-            AddComponents(p2uAmqpHost.Components, componentView);
             componentView.Add(gemPlus);
             componentView.Add(nhsSpine);
+            componentView.Add(p2uAmqpHost);
+            componentView.Add(stateDb);
+            AddComponents(p2uSpinalTapServer.Components, componentView);
             componentView.PaperSize = PaperSize.A4_Landscape;
 
             var styles = workspace.Views.Configuration.Styles;
+            styles.Add(new ElementStyle(Tags.Person) { Shape = Shape.Person });
             styles.Add(new ElementStyle(Tags.SoftwareSystem) { Shape = Shape.Box });
             styles.Add(new ElementStyle(Tags.Container) { Shape = Shape.Folder });
             styles.Add(new ElementStyle(Tags.ContainerInstance) { Shape = Shape.Hexagon });
